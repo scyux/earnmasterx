@@ -85,7 +85,7 @@ h1 {
 #stop-btn:hover { background:#555; }
 #stop-btn:disabled { background:#333; cursor:not-allowed; opacity:0.6; }
 
-/* Reklam Alanı - Monetag */
+/* Reklam kutusu — başta görünmez */
 #monetag-ad {
     position: fixed;
     top: 15px;
@@ -99,13 +99,11 @@ h1 {
     overflow: hidden;
     box-shadow: 0 8px 30px rgba(0,0,0,0.7);
     display: none;
-    visibility: hidden;
     opacity: 0;
     transition: opacity 0.3s;
 }
-#monetag-ad.active {
+#monetag-ad.visible {
     display: block;
-    visibility: visible;
     opacity: 1;
 }
 </style>
@@ -132,8 +130,8 @@ h1 {
 let watched = parseInt(localStorage.getItem('watched') || 0);
 let points = parseFloat(localStorage.getItem('points') || 0);
 let running = false;
-let timer = null;
-let adTimer = null;
+let countdownTimer = null;
+let adTimeout = null;
 let sdkReady = false;
 
 function updateUI() {
@@ -144,6 +142,7 @@ function updateUI() {
 }
 updateUI();
 
+// SDK hazır mı?
 function checkSDK() {
     if (typeof window.show_10175246 === 'function') {
         sdkReady = true;
@@ -154,78 +153,99 @@ function checkSDK() {
 }
 checkSDK();
 
-function startCountdown(sec, callback) {
-    const el = document.getElementById('timer');
-    let s = sec;
-    el.textContent = s;
-    clearInterval(timer);
-    timer = setInterval(() => {
-        s--;
-        el.textContent = s;
-        if (s <= 0) {
-            clearInterval(timer);
-            if (callback) callback();
-        }
-    }, 1000);
-}
-
-function closeAd() {
+// Reklam alanını gizle
+function hideAd() {
     const ad = document.getElementById('monetag-ad');
-    ad.classList.remove('active');
-    // İçeriği tamamen temizle
-    ad.innerHTML = '';
-    ad.style.display = 'none';
+    ad.classList.remove('visible');
+    // 100ms sonra içeriği temizle (transition bitmesi için)
+    setTimeout(() => {
+        ad.innerHTML = '';
+        ad.style.display = 'none';
+    }, 100);
 }
 
+// Tek bir reklam döngüsü
 async function showAd() {
-    if (!running) return;
-
-    const ad = document.getElementById('monetag-ad');
-    ad.innerHTML = '';
-    ad.style.display = 'block';
-    // Hemen görünür yapma, içerik yüklendikten sonra aktif et
-    ad.classList.remove('active');
-
-    if (!sdkReady) {
-        console.warn('SDK hazır değil');
+    if (!running || !sdkReady) {
+        // SDK hazır değilse 15 saniye sonra tekrar dene
         setTimeout(() => {
-            if (running) startCountdown(15, showAd);
+            if (running) startCountdown();
         }, 15000);
         return;
     }
 
+    const ad = document.getElementById('monetag-ad');
+    ad.innerHTML = '';
+    ad.style.display = 'block';
+    ad.classList.remove('visible'); // şeffaf halde
+
     try {
         await show_10175246({ target: ad });
-        // Reklam yüklendiyse görünür yap
-        ad.classList.add('active');
 
-        adTimer = setTimeout(() => {
-            // Puan ekle
+        // Monetag iframe ekledi — onu hemen bul ve şeffaf yap
+        const iframe = ad.querySelector('iframe');
+        if (iframe) {
+            iframe.style.opacity = '0';
+            iframe.style.transition = 'opacity 0.3s';
+            // 800ms sonra reklam büyük ihtimalle yüklendi → görünür yap
+            setTimeout(() => {
+                if (running && iframe.parentNode === ad) {
+                    iframe.style.opacity = '1';
+                    ad.classList.add('visible');
+                }
+            }, 800);
+        } else {
+            // iframe yoksa, doğrudan görünür yap (fallback)
+            ad.classList.add('visible');
+        }
+
+        // 15 saniye sonra kapat + ödül ver
+        adTimeout = setTimeout(() => {
+            hideAd();
+
+            // Ödül ver
             watched++;
             points += 0.5;
             localStorage.setItem('watched', watched);
             localStorage.setItem('points', points.toFixed(2));
             updateUI();
 
-            closeAd();
-
+            // Yeni döngü
             if (running) {
-                startCountdown(15, showAd);
+                startCountdown();
             }
         }, 15000);
 
     } catch (e) {
-        console.error('Reklam gösterim hatası:', e);
-        closeAd();
-        if (running) {
-            startCountdown(15, showAd);
-        }
+        console.error('Reklam hatası:', e);
+        hideAd();
+        // Hata olsa bile 15 saniye sonra tekrar dene
+        setTimeout(() => {
+            if (running) startCountdown();
+        }, 15000);
     }
 }
 
+// Geri sayım UI + reklam tetikleme
+function startCountdown() {
+    let s = 15;
+    document.getElementById('timer').textContent = s;
+    clearInterval(countdownTimer);
+
+    countdownTimer = setInterval(() => {
+        s--;
+        document.getElementById('timer').textContent = s;
+        if (s <= 0) {
+            clearInterval(countdownTimer);
+            showAd();
+        }
+    }, 1000);
+}
+
+// Butonlar
 document.getElementById('auto-btn').onclick = () => {
     if (!sdkReady) {
-        alert('Reklam sistemi yükleniyor, lütfen bekleyin...');
+        alert('Reklam sistemi hazırlanıyor, lütfen 5-10 saniye bekleyin...');
         return;
     }
     if (running) return;
@@ -233,18 +253,19 @@ document.getElementById('auto-btn').onclick = () => {
     running = true;
     document.getElementById('auto-btn').disabled = true;
     document.getElementById('stop-btn').disabled = false;
-    showAd();
+    showAd(); // ilk reklam hemen başlar
 };
 
 document.getElementById('stop-btn').onclick = () => {
     running = false;
-    clearInterval(timer);
-    clearTimeout(adTimer);
-    closeAd();
+    clearInterval(countdownTimer);
+    clearTimeout(adTimeout);
+    hideAd();
     document.getElementById('auto-btn').disabled = false;
     document.getElementById('stop-btn').disabled = true;
 };
 
+// Sayfa kapanırsa durdur
 window.addEventListener('beforeunload', () => {
     if (running) {
         document.getElementById('stop-btn').click();
