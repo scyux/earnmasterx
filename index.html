@@ -85,7 +85,7 @@ h1 {
 #stop-btn:hover { background:#555; }
 #stop-btn:disabled { background:#333; cursor:not-allowed; opacity:0.6; }
 
-/* Reklam Alanı - Sadece Monetag iframe */
+/* Reklam Alanı - Monetag */
 #monetag-ad {
     position: fixed;
     top: 15px;
@@ -99,6 +99,14 @@ h1 {
     overflow: hidden;
     box-shadow: 0 8px 30px rgba(0,0,0,0.7);
     display: none;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+#monetag-ad.active {
+    display: block;
+    visibility: visible;
+    opacity: 1;
 }
 </style>
 </head>
@@ -121,15 +129,13 @@ h1 {
 <script src="https://libtl.com/sdk.js" data-zone="10175246" data-sdk="show_10175246"></script>
 
 <script>
-// Veriler
-let watched = parseInt(localStorage.getItem('watched')||0);
-let points = parseFloat(localStorage.getItem('points')||0);
+let watched = parseInt(localStorage.getItem('watched') || 0);
+let points = parseFloat(localStorage.getItem('points') || 0);
 let running = false;
 let timer = null;
 let adTimer = null;
 let sdkReady = false;
 
-// UI Güncelle
 function updateUI() {
     document.getElementById('watched').textContent = watched;
     document.getElementById('points').textContent = points.toFixed(2);
@@ -138,18 +144,16 @@ function updateUI() {
 }
 updateUI();
 
-// SDK Kontrol
 function checkSDK() {
     if (typeof window.show_10175246 === 'function') {
         sdkReady = true;
-        console.log('Monetag yüklendi');
+        console.log('Monetag SDK hazır');
     } else {
         setTimeout(checkSDK, 500);
     }
 }
 checkSDK();
 
-// Geri Sayım
 function startCountdown(sec, callback) {
     const el = document.getElementById('timer');
     let s = sec;
@@ -165,54 +169,63 @@ function startCountdown(sec, callback) {
     }, 1000);
 }
 
-// Reklamı Kapat
 function closeAd() {
     const ad = document.getElementById('monetag-ad');
+    ad.classList.remove('active');
+    // İçeriği tamamen temizle
     ad.innerHTML = '';
     ad.style.display = 'none';
 }
 
-// Reklam Göster + 15s sonra kapat
 async function showAd() {
-    if (!sdkReady || !running) return;
+    if (!running) return;
 
     const ad = document.getElementById('monetag-ad');
-    ad.style.display = 'block';
     ad.innerHTML = '';
+    ad.style.display = 'block';
+    // Hemen görünür yapma, içerik yüklendikten sonra aktif et
+    ad.classList.remove('active');
+
+    if (!sdkReady) {
+        console.warn('SDK hazır değil');
+        setTimeout(() => {
+            if (running) startCountdown(15, showAd);
+        }, 15000);
+        return;
+    }
 
     try {
         await show_10175246({ target: ad });
+        // Reklam yüklendiyse görünür yap
+        ad.classList.add('active');
 
-        // 15 SANİYE SONRA KAPAT
         adTimer = setTimeout(() => {
-            closeAd();
-
-            // Puan ver
+            // Puan ekle
             watched++;
             points += 0.5;
             localStorage.setItem('watched', watched);
             localStorage.setItem('points', points.toFixed(2));
             updateUI();
 
-            // YENİ REKLAM
+            closeAd();
+
             if (running) {
                 startCountdown(15, showAd);
             }
         }, 15000);
 
     } catch (e) {
-        console.error('Reklam hatası:', e);
-        setTimeout(() => {
-            closeAd();
-            if (running) startCountdown(15, showAd);
-        }, 2000);
+        console.error('Reklam gösterim hatası:', e);
+        closeAd();
+        if (running) {
+            startCountdown(15, showAd);
+        }
     }
 }
 
-// Başlat
 document.getElementById('auto-btn').onclick = () => {
     if (!sdkReady) {
-        alert('Reklam sistemi yükleniyor...');
+        alert('Reklam sistemi yükleniyor, lütfen bekleyin...');
         return;
     }
     if (running) return;
@@ -223,7 +236,6 @@ document.getElementById('auto-btn').onclick = () => {
     showAd();
 };
 
-// Durdur
 document.getElementById('stop-btn').onclick = () => {
     running = false;
     clearInterval(timer);
@@ -233,9 +245,10 @@ document.getElementById('stop-btn').onclick = () => {
     document.getElementById('stop-btn').disabled = true;
 };
 
-// Sayfa kapanırken
 window.addEventListener('beforeunload', () => {
-    if (running) document.getElementById('stop-btn').click();
+    if (running) {
+        document.getElementById('stop-btn').click();
+    }
 });
 </script>
 </body>
