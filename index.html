@@ -18,6 +18,7 @@ body {
     color:#fff;
     font-family:'Poppins',sans-serif;
     overflow:hidden;
+    position:relative;
 }
 @keyframes bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .container {
@@ -28,6 +29,7 @@ body {
     text-align:center;
     box-shadow:0 12px 40px rgba(0,0,0,0.6);
     border:1px solid rgba(0,255,204,0.2);
+    z-index:10;
 }
 h1 {
     font-family:'Orbitron',sans-serif;
@@ -83,48 +85,20 @@ h1 {
 #stop-btn:hover { background:#555; }
 #stop-btn:disabled { background:#333; cursor:not-allowed; opacity:0.6; }
 
-/* Reklam Alanı */
-.ad-box {
-    position:fixed;
-    top:15px;
-    right:15px;
-    width:310px;
-    max-width:90vw;
-    height:260px;
-    background:#111;
-    border:2px solid #00ffcc;
-    border-radius:14px;
-    box-shadow:0 8px 30px rgba(0,0,0,0.7);
-    z-index:9999;
-    overflow:hidden;
-    display:none;
-    flex-direction:column;
-}
-.ad-close {
-    position:absolute;
-    top:8px;
-    right:8px;
-    width:34px;
-    height:34px;
-    background:#e74c3c;
-    color:#fff;
-    border:none;
-    border-radius:50%;
-    font-size:18px;
-    font-weight:bold;
-    cursor:pointer;
-    z-index:10000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    box-shadow:0 2px 8px rgba(0,0,0,0.4);
-}
-.ad-close:hover { background:#c0392b; transform:scale(1.1); }
-.ad-content {
-    flex:1;
-    width:100%;
-    height:100%;
-    border:none;
+/* Reklam Alanı - Monetag'ın kendi X butonu */
+#monetag-ad-container {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 310px;
+    max-width: 90vw;
+    height: 260px;
+    z-index: 9999;
+    border: 2px solid #00ffcc;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+    display: none;
 }
 </style>
 </head>
@@ -142,11 +116,8 @@ h1 {
     <button id="stop-btn" class="btn" disabled>Auto Ads Durdur</button>
 </div>
 
-<!-- Reklam Alanı -->
-<div id="ad-box" class="ad-box">
-    <button id="ad-close" class="ad-close">X</button>
-    <div id="ad-content" class="ad-content"></div>
-</div>
+<!-- Monetag Reklam Alanı -->
+<div id="monetag-ad-container"></div>
 
 <!-- Monetag SDK -->
 <script src="https://libtl.com/sdk.js" data-zone="10175246" data-sdk="show_10175246"></script>
@@ -159,6 +130,7 @@ let running = false;
 let timer = null;
 let adTimer = null;
 let sdkReady = false;
+let adContainer = null;
 
 // UI Güncelle
 function updateUI() {
@@ -173,6 +145,7 @@ updateUI();
 function checkSDK() {
     if (typeof window.show_10175246 === 'function') {
         sdkReady = true;
+        console.log('Monetag yüklendi');
     } else {
         setTimeout(checkSDK, 500);
     }
@@ -195,54 +168,58 @@ function startCountdown(sec, callback) {
     }, 1000);
 }
 
-// Reklam Göster + 15s sonra otomatik kapat
-async function showAd() {
-    if (!sdkReady || !running) return;
-
-    const box = document.getElementById('ad-box');
-    const content = document.getElementById('ad-content');
-    const closeBtn = document.getElementById('ad-close');
-
-    // Temizle ve göster
-    content.innerHTML = '';
-    box.style.display = 'flex';
-
-    try {
-        await show_10175246({ target: content });
-
-        // 15 SANİYE SONRA OTOMATİK KAPAT
-        adTimer = setTimeout(() => {
-            closeBtn.click(); // X'E OTOMATİK TIKLAMA
-        }, 15000);
-
-    } catch (e) {
-        console.error('Reklam yüklenemedi:', e);
-        setTimeout(() => closeBtn.click(), 2000);
+// Monetag'ın X butonuna otomatik tıklama
+function autoCloseAd() {
+    // Reklamın içindeki X butonunu bul
+    const closeBtn = document.querySelector('#monetag-ad-container iframe')?.contentDocument?.querySelector('button[aria-label="Close"], .close-btn, [class*="close"], [id*="close"], button');
+    
+    if (closeBtn) {
+        closeBtn.click();
+        console.log('X butonu otomatik tıklandı');
+    } else {
+        // Bulunamazsa zorla kaldır
+        document.getElementById('monetag-ad-container').innerHTML = '';
+        document.getElementById('monetag-ad-container').style.display = 'none';
     }
 }
 
-// X'e tıklandığında (otomatik veya elle)
-document.getElementById('ad-close').onclick = () => {
-    clearTimeout(adTimer);
-    document.getElementById('ad-box').style.display = 'none';
+// Reklam Göster + 15s sonra kapat
+async function showAd() {
+    if (!sdkReady || !running) return;
 
-    // Puan ver
-    watched++;
-    points += 0.5;
-    localStorage.setItem('watched', watched);
-    localStorage.setItem('points', points.toFixed(2));
-    updateUI();
+    const container = document.getElementById('monetag-ad-container');
+    container.style.display = 'block';
+    container.innerHTML = '';
 
-    // YENİ REKLAM BAŞLAT
-    if (running) {
-        startCountdown(15, showAd);
+    try {
+        await show_10175246({ target: container });
+
+        // 15 saniye sonra kapat
+        adTimer = setTimeout(() => {
+            autoCloseAd();
+            // Puan ver
+            watched++;
+            points += 0.5;
+            localStorage.setItem('watched', watched);
+            localStorage.setItem('points', points.toFixed(2));
+            updateUI();
+            // Yeni reklam
+            if (running) startCountdown(15, showAd);
+        }, 15000);
+
+    } catch (e) {
+        console.error('Reklam hatası:', e);
+        setTimeout(() => {
+            container.style.display = 'none';
+            if (running) startCountdown(15, showAd);
+        }, 2000);
     }
-};
+}
 
-// Auto Ads Başlat
+// Başlat
 document.getElementById('auto-btn').onclick = () => {
     if (!sdkReady) {
-        alert('Reklam sistemi yükleniyor, lütfen bekleyin...');
+        alert('Yükleniyor...');
         return;
     }
     if (running) return;
@@ -250,21 +227,22 @@ document.getElementById('auto-btn').onclick = () => {
     running = true;
     document.getElementById('auto-btn').disabled = true;
     document.getElementById('stop-btn').disabled = false;
-
-    showAd(); // İlk reklam hemen
+    showAd();
 };
 
-// Auto Ads Durdur
+// Durdur
 document.getElementById('stop-btn').onclick = () => {
     running = false;
     clearInterval(timer);
     clearTimeout(adTimer);
-    document.getElementById('ad-box').style.display = 'none';
+    const container = document.getElementById('monetag-ad-container');
+    container.style.display = 'none';
+    container.innerHTML = '';
     document.getElementById('auto-btn').disabled = false;
     document.getElementById('stop-btn').disabled = true;
 };
 
-// Sayfa kapanırken durdur
+// Sayfa kapanırken
 window.addEventListener('beforeunload', () => {
     if (running) document.getElementById('stop-btn').click();
 });
