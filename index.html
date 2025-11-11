@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Earn Master</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600&display=swap');
-* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Orbitron:wght@500&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
 body {
     height:100vh;
     display:flex;
@@ -14,11 +14,12 @@ body {
     align-items:center;
     background:linear-gradient(135deg,#1a0b3d,#2a1a5e,#0f0c29);
     background-size:400% 400%;
-    animation:bgAnim 12s ease infinite;
+    animation:bg 12s ease infinite;
     color:#fff;
+    font-family:'Poppins',sans-serif;
     overflow:hidden;
 }
-@keyframes bgAnim{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .container {
     background:rgba(15,15,30,0.92);
     padding:28px;
@@ -82,7 +83,7 @@ h1 {
 #stop-btn:hover { background:#555; }
 #stop-btn:disabled { background:#333; cursor:not-allowed; opacity:0.6; }
 
-/* Reklam Konteyneri - Sağ Üst */
+/* Reklam Alanı */
 .ad-box {
     position:fixed;
     top:15px;
@@ -151,33 +152,35 @@ h1 {
 <script src="https://libtl.com/sdk.js" data-zone="10175246" data-sdk="show_10175246"></script>
 
 <script>
+// Veriler
 let watched = parseInt(localStorage.getItem('watched')||0);
 let points = parseFloat(localStorage.getItem('points')||0);
 let running = false;
 let timer = null;
 let adTimer = null;
-let sdkOk = false;
+let sdkReady = false;
 
-// UI
-function update() {
+// UI Güncelle
+function updateUI() {
     document.getElementById('watched').textContent = watched;
     document.getElementById('points').textContent = points.toFixed(2);
     const pct = Math.min((watched % 10) * 10, 100);
     document.getElementById('progress-fill').style.width = pct + '%';
 }
-update();
+updateUI();
 
 // SDK Kontrol
 function checkSDK() {
     if (typeof window.show_10175246 === 'function') {
-        sdkOk = true;
-        console.log('Monetag yüklendi');
-    } else setTimeout(checkSDK, 500);
+        sdkReady = true;
+    } else {
+        setTimeout(checkSDK, 500);
+    }
 }
 checkSDK();
 
 // Geri Sayım
-function countdown(sec, cb) {
+function startCountdown(sec, callback) {
     const el = document.getElementById('timer');
     let s = sec;
     el.textContent = s;
@@ -185,52 +188,73 @@ function countdown(sec, cb) {
     timer = setInterval(() => {
         s--;
         el.textContent = s;
-        if (s <= 0) { clearInterval(timer); if(cb) cb(); }
+        if (s <= 0) {
+            clearInterval(timer);
+            if (callback) callback();
+        }
     }, 1000);
 }
 
-// Reklam Göster + Otomatik Kapat
+// Reklam Göster + 15s sonra otomatik kapat
 async function showAd() {
-    if (!sdkOk || !running) return;
+    if (!sdkReady || !running) return;
+
     const box = document.getElementById('ad-box');
     const content = document.getElementById('ad-content');
     const closeBtn = document.getElementById('ad-close');
+
+    // Temizle ve göster
     content.innerHTML = '';
     box.style.display = 'flex';
 
     try {
         await show_10175246({ target: content });
-        // 15 saniye sonra X'e otomatik tıkla
-        adTimer = setTimeout(() => closeBtn.click(), 15000);
-    } catch(e) {
-        console.error('Reklam hatası:', e);
+
+        // 15 SANİYE SONRA OTOMATİK KAPAT
+        adTimer = setTimeout(() => {
+            closeBtn.click(); // X'E OTOMATİK TIKLAMA
+        }, 15000);
+
+    } catch (e) {
+        console.error('Reklam yüklenemedi:', e);
         setTimeout(() => closeBtn.click(), 2000);
     }
 }
 
-// X'e tıklandığında (otomatik/manuel)
+// X'e tıklandığında (otomatik veya elle)
 document.getElementById('ad-close').onclick = () => {
     clearTimeout(adTimer);
     document.getElementById('ad-box').style.display = 'none';
+
+    // Puan ver
     watched++;
     points += 0.5;
     localStorage.setItem('watched', watched);
     localStorage.setItem('points', points.toFixed(2));
-    update();
-    if (running) countdown(15, showAd);
+    updateUI();
+
+    // YENİ REKLAM BAŞLAT
+    if (running) {
+        startCountdown(15, showAd);
+    }
 };
 
-// Başlat
+// Auto Ads Başlat
 document.getElementById('auto-btn').onclick = () => {
-    if (!sdkOk) { alert('Yükleniyor...'); return; }
+    if (!sdkReady) {
+        alert('Reklam sistemi yükleniyor, lütfen bekleyin...');
+        return;
+    }
     if (running) return;
+
     running = true;
     document.getElementById('auto-btn').disabled = true;
     document.getElementById('stop-btn').disabled = false;
-    showAd();
+
+    showAd(); // İlk reklam hemen
 };
 
-// Durdur
+// Auto Ads Durdur
 document.getElementById('stop-btn').onclick = () => {
     running = false;
     clearInterval(timer);
