@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Earn Master Auto Ads 2.0</title>
+<title>Earn Master Auto Ads 3.0</title>
 <style>
 body {
   font-family: sans-serif;
@@ -29,16 +29,27 @@ button {
 }
 button.start { background: linear-gradient(45deg,#ff512f,#dd2476); }
 button.stop { background: transparent; border: 1px solid rgba(255,255,255,.3); margin-top: 8px; }
-#countdown { margin-top: 10px; color: #ffd966; font-size: 14px; }
-iframe#adFrame {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  border: none; z-index: 9999;
+#adBox {
+  width: 300px; height: 250px;
+  margin: 15px auto;
+  border: 2px solid #00ffcc;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #ccc;
 }
+#adBox:hover { background: rgba(255,255,255,0.1); color: #fff; }
+#countdown { margin-top: 10px; color: #ffd966; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>Earn Master</h1>
+  <div id="adBox">Click here to view ad</div>
   <p>Watched Ads: <span id="watched">0</span></p>
   <p>Earned Points: <span id="points">0.00</span></p>
   <button class="start" id="startBtn">Start Auto Ads</button>
@@ -58,58 +69,35 @@ const sEl = document.getElementById('sec');
 function updateUI(){ wEl.textContent=watched; pEl.textContent=points.toFixed(2); }
 updateUI();
 
-// Monetag reklam URL'ini buraya ekle (örnek zone ID ile)
 const monetagAdUrl = "https://syndication.realsrv.com/splash.php?idzone=10175246&type=300x250";
 
 function startAutoAds(){
   running = true;
   document.getElementById('startBtn').disabled = true;
   document.getElementById('stopBtn').disabled = false;
-  showAd();
+  cycleAd();
 }
+
 function stopAutoAds(){
   running = false;
   clearTimeout(timer);
   document.getElementById('startBtn').disabled = false;
   document.getElementById('stopBtn').disabled = true;
   cEl.style.display = "none";
-  const f = document.getElementById('adFrame');
-  if(f) f.remove();
 }
 
-async function showAd(){
+function cycleAd(){
   if(!running) return;
-  try {
-    // Eğer açık iframe varsa kapat
-    const old = document.getElementById('adFrame');
-    if(old) old.remove();
-
-    // Yeni iframe oluştur
-    const iframe = document.createElement('iframe');
-    iframe.id = 'adFrame';
-    iframe.src = monetagAdUrl + "&r=" + Math.random(); // cache bypass
-    document.body.appendChild(iframe);
-
-    // Sayaç başlat
-    countdown(15);
-
-    // 15 sn sonra kapatıp yenisini aç
-    timer = setTimeout(()=>{
-      if(!running) return;
-      iframe.remove();
-      watched++;
-      points += 0.5;
-      localStorage.setItem('watched',watched);
-      localStorage.setItem('points',points.toFixed(2));
-      updateUI();
-      showAd();
-    },15000);
-
-  } catch(err){
-    console.warn("Ad load error, retrying...", err);
-    // hata olursa 3 saniye sonra tekrar dene
-    setTimeout(()=>{ if(running) showAd(); },3000);
-  }
+  countdown(15);
+  timer = setTimeout(()=>{
+    if(!running) return;
+    watched++;
+    points += 0.5;
+    localStorage.setItem('watched',watched);
+    localStorage.setItem('points',points.toFixed(2));
+    updateUI();
+    cycleAd(); // döngü
+  },15000);
 }
 
 function countdown(sec){
@@ -121,6 +109,11 @@ function countdown(sec){
     if(s<=0){ clearInterval(interval); }
   },1000);
 }
+
+// Monetag reklam kutusu tıklanınca açılır
+document.getElementById('adBox').addEventListener('click', ()=>{
+  window.open(monetagAdUrl, "_blank");
+});
 
 document.getElementById('startBtn').onclick = startAutoAds;
 document.getElementById('stopBtn').onclick = stopAutoAds;
