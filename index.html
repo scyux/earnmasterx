@@ -3,116 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Earn Master Auto Ads</title>
+<title>Earn Master</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Raleway:wght@400;600&display=swap');
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Raleway', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
 body {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    color: #fff;
-    position: relative;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#1a0b3d,#2a1a5e,#0f0c29);
+    background-size:400% 400%;
+    animation:bgAnim 12s ease infinite;
+    color:#fff;
+    overflow:hidden;
 }
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+@keyframes bgAnim{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .container {
-    background: rgba(20,20,20,0.85);
-    padding: 30px;
-    border-radius: 20px;
-    width: 360px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-    text-align: center;
+    background:rgba(15,15,30,0.92);
+    padding:28px;
+    border-radius:18px;
+    width:340px;
+    text-align:center;
+    box-shadow:0 12px 40px rgba(0,0,0,0.6);
+    border:1px solid rgba(0,255,204,0.2);
 }
 h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 28px;
-    color: #00ffcc;
-    margin-bottom: 15px;
+    font-family:'Orbitron',sans-serif;
+    font-size:26px;
+    color:#00ffcc;
+    margin-bottom:12px;
+    text-shadow:0 0 8px rgba(0,255,204,0.5);
 }
-.stats p {
-    font-size: 15px;
-    margin: 6px 0;
+.stats { margin:12px 0; font-size:15px; }
+.stats p { margin:5px 0; }
+.progress-bar {
+    width:100%;
+    height:8px;
+    background:rgba(0,255,204,0.1);
+    border-radius:4px;
+    overflow:hidden;
+    margin:12px 0;
 }
-.progress-circle {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: conic-gradient(#00ffcc 0%, rgba(0,255,204,0.1) 0%);
-    margin: 15px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 18px;
-    color: #00ffcc;
-    transition: background 0.5s ease;
+.progress-fill {
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#00ffcc,#00b894);
+    border-radius:4px;
+    transition:width 0.6s ease;
 }
-.buttons button {
-    width: 95%;
-    padding: 12px;
-    margin: 8px 0;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    color: #fff;
-    background: linear-gradient(45deg,#ff512f,#dd2476);
-    transition: 0.3s;
-}
-.buttons button:hover { background: linear-gradient(45deg,#dd2476,#ff512f); }
-.buttons button:disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
-
 #countdown {
-    margin: 12px 0;
-    font-size: 16px;
-    color: #ffd966;
-    font-weight: bold;
+    font-size:15px;
+    color:#ffd700;
+    font-weight:600;
+    margin:10px 0;
 }
-#countdown span { color: #00ffcc; font-size: 18px; }
+#countdown span { color:#00ffcc; font-size:17px; }
+.btn {
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.3s;
+}
+#auto-btn {
+    background:linear-gradient(45deg,#ff512f,#dd2476);
+    color:#fff;
+}
+#auto-btn:hover { background:linear-gradient(45deg,#dd2476,#ff512f); }
+#stop-btn {
+    background:#444;
+    color:#ccc;
+}
+#stop-btn:hover { background:#555; }
+#stop-btn:disabled { background:#333; cursor:not-allowed; opacity:0.6; }
 
 /* Reklam Konteyneri - Sağ Üst */
-.ad-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 320px;
-    max-width: 90vw;
-    background: #111;
-    border: 2px solid #00ffcc;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-    z-index: 9999;
-    overflow: hidden;
-    display: none;
+.ad-box {
+    position:fixed;
+    top:15px;
+    right:15px;
+    width:310px;
+    max-width:90vw;
+    height:260px;
+    background:#111;
+    border:2px solid #00ffcc;
+    border-radius:14px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.7);
+    z-index:9999;
+    overflow:hidden;
+    display:none;
+    flex-direction:column;
 }
 .ad-close {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
-    background: #ff4444;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position:absolute;
+    top:8px;
+    right:8px;
+    width:34px;
+    height:34px;
+    background:#e74c3c;
+    color:#fff;
+    border:none;
+    border-radius:50%;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    z-index:10000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
 }
-.ad-close:hover { background: #ff0000; }
+.ad-close:hover { background:#c0392b; transform:scale(1.1); }
+.ad-content {
+    flex:1;
+    width:100%;
+    height:100%;
+    border:none;
+}
 </style>
 </head>
 <body>
@@ -120,151 +132,117 @@ h1 {
 <div class="container">
     <h1>Earn Master</h1>
     <div class="stats">
-        <p>İzlenen Reklam: <span id="watched-ads">0</span></p>
-        <p>Kazanılan Puan: <span id="earned-points">0.00</span></p>
+        <p>İzlenen: <span id="watched">0</span></p>
+        <p>Puan: <span id="points">0.00</span></p>
     </div>
-    <div class="progress-circle" id="progress-circle">
-        <span id="ads-progress">0%</span>
-    </div>
-    <div id="countdown">Sonraki reklam: <span id="timer">15</span>s</div>
-
-    <div class="buttons">
-        <button id="auto-ad-btn">Auto Ads Başlat</button>
-        <button id="stop-auto-btn" disabled>Auto Ads Durdur</button>
-    </div>
+    <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+    <div id="countdown">Sonraki: <span id="timer">15</span>s</div>
+    <button id="auto-btn" class="btn">Auto Ads Başlat</button>
+    <button id="stop-btn" class="btn" disabled>Auto Ads Durdur</button>
 </div>
 
-<!-- Reklam Penceresi (Sağ Üst) -->
-<div id="ad-container" class="ad-container">
+<!-- Reklam Alanı -->
+<div id="ad-box" class="ad-box">
     <button id="ad-close" class="ad-close">X</button>
-    <div id="ad-content"></div>
+    <div id="ad-content" class="ad-content"></div>
 </div>
 
 <!-- Monetag SDK -->
 <script src="https://libtl.com/sdk.js" data-zone="10175246" data-sdk="show_10175246"></script>
 
 <script>
-// --- Veri ve UI ---
-let watchedAdsCount = parseInt(localStorage.getItem('watchedAdsCount')) || 0;
-let earnedPoints = parseFloat(localStorage.getItem('earnedPoints')) || 0;
-let autoRunning = false;
-let countdownInterval = null;
-let adTimeout = null;
-let sdkReady = false;
+let watched = parseInt(localStorage.getItem('watched')||0);
+let points = parseFloat(localStorage.getItem('points')||0);
+let running = false;
+let timer = null;
+let adTimer = null;
+let sdkOk = false;
 
-// UI Güncelle
-function updateUI() {
-    document.getElementById('watched-ads').textContent = watchedAdsCount;
-    document.getElementById('earned-points').textContent = earnedPoints.toFixed(2);
-    const percent = Math.min((watchedAdsCount % 10) * 10, 100);
-    document.getElementById('ads-progress').textContent = percent + '%';
-    document.getElementById('progress-circle').style.background = 
-        `conic-gradient(#00ffcc ${percent}%, rgba(0,255,204,0.1) ${percent}%)`;
+// UI
+function update() {
+    document.getElementById('watched').textContent = watched;
+    document.getElementById('points').textContent = points.toFixed(2);
+    const pct = Math.min((watched % 10) * 10, 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
 }
-updateUI();
+update();
 
 // SDK Kontrol
 function checkSDK() {
     if (typeof window.show_10175246 === 'function') {
-        sdkReady = true;
-        console.log('Monetag SDK yüklendi');
-    } else {
-        setTimeout(checkSDK, 500);
-    }
+        sdkOk = true;
+        console.log('Monetag yüklendi');
+    } else setTimeout(checkSDK, 500);
 }
 checkSDK();
 
 // Geri Sayım
-function startCountdown(seconds, callback) {
-    const timerEl = document.getElementById('timer');
-    let left = seconds;
-    timerEl.textContent = left;
-
-    clearInterval(countdownInterval);
-    countdownInterval = setInterval(() => {
-        left--;
-        timerEl.textContent = left;
-        if (left <= 0) {
-            clearInterval(countdownInterval);
-            if (callback) callback();
-        }
+function countdown(sec, cb) {
+    const el = document.getElementById('timer');
+    let s = sec;
+    el.textContent = s;
+    clearInterval(timer);
+    timer = setInterval(() => {
+        s--;
+        el.textContent = s;
+        if (s <= 0) { clearInterval(timer); if(cb) cb(); }
     }, 1000);
 }
 
-// Reklamı Aç + 15s sonra X'e otomatik tıkla
-async function showAdAndAutoClose() {
-    if (!sdkReady || !autoRunning) return;
-
-    const container = document.getElementById('ad-container');
+// Reklam Göster + Otomatik Kapat
+async function showAd() {
+    if (!sdkOk || !running) return;
+    const box = document.getElementById('ad-box');
     const content = document.getElementById('ad-content');
     const closeBtn = document.getElementById('ad-close');
-
-    // Temizle
     content.innerHTML = '';
-    container.style.display = 'block';
+    box.style.display = 'flex';
 
     try {
         await show_10175246({ target: content });
-
-        // 15 SANİYE SONRA X BUTONUNA OTOMATİK TIKLAMA
-        adTimeout = setTimeout(() => {
-            closeBtn.click(); // OTOMATİK TIKLAMA
-        }, 15000);
-
-    } catch (e) {
+        // 15 saniye sonra X'e otomatik tıkla
+        adTimer = setTimeout(() => closeBtn.click(), 15000);
+    } catch(e) {
         console.error('Reklam hatası:', e);
         setTimeout(() => closeBtn.click(), 2000);
     }
 }
 
-// X'e tıklanınca (manuel veya otomatik)
+// X'e tıklandığında (otomatik/manuel)
 document.getElementById('ad-close').onclick = () => {
-    clearTimeout(adTimeout);
-    document.getElementById('ad-container').style.display = 'none';
-
-    // Puan ver
-    watchedAdsCount++;
-    earnedPoints += 0.5;
-    localStorage.setItem('watchedAdsCount', watchedAdsCount);
-    localStorage.setItem('earnedPoints', earnedPoints.toFixed(2));
-    updateUI();
-
-    // Yeni döngü
-    if (autoRunning) {
-        startCountdown(15, showAdAndAutoClose);
-    }
+    clearTimeout(adTimer);
+    document.getElementById('ad-box').style.display = 'none';
+    watched++;
+    points += 0.5;
+    localStorage.setItem('watched', watched);
+    localStorage.setItem('points', points.toFixed(2));
+    update();
+    if (running) countdown(15, showAd);
 };
 
-// Auto Ads Başlat
-document.getElementById('auto-ad-btn').onclick = () => {
-    if (!sdkReady) {
-        alert('Reklam sistemi yükleniyor, lütfen bekleyin...');
-        return;
-    }
-    if (autoRunning) return;
-
-    autoRunning = true;
-    document.getElementById('auto-ad-btn').disabled = true;
-    document.getElementById('stop-auto-btn').disabled = false;
-
-    showAdAndAutoClose();
+// Başlat
+document.getElementById('auto-btn').onclick = () => {
+    if (!sdkOk) { alert('Yükleniyor...'); return; }
+    if (running) return;
+    running = true;
+    document.getElementById('auto-btn').disabled = true;
+    document.getElementById('stop-btn').disabled = false;
+    showAd();
 };
 
-// Auto Ads Durdur
-document.getElementById('stop-auto-btn').onclick = () => {
-    autoRunning = false;
-    clearInterval(countdownInterval);
-    clearTimeout(adTimeout);
-    document.getElementById('ad-container').style.display = 'none';
-    document.getElementById('auto-ad-btn').disabled = false;
-    document.getElementById('stop-auto-btn').disabled = true;
+// Durdur
+document.getElementById('stop-btn').onclick = () => {
+    running = false;
+    clearInterval(timer);
+    clearTimeout(adTimer);
+    document.getElementById('ad-box').style.display = 'none';
+    document.getElementById('auto-btn').disabled = false;
+    document.getElementById('stop-btn').disabled = true;
 };
 
-// Sayfa kapanırken temizle
+// Sayfa kapanırken durdur
 window.addEventListener('beforeunload', () => {
-    if (autoRunning) {
-        document.getElementById('stop-auto-btn').click();
-    }
+    if (running) document.getElementById('stop-btn').click();
 });
 </script>
 </body>
