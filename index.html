@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Earn Master Auto Ads 3.0</title>
+<title>Earn Master Auto Ads</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Raleway:wght@400;600&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Raleway', sans-serif; }
@@ -16,6 +16,7 @@ body {
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
     color: #fff;
+    position: relative;
 }
 @keyframes gradientBG {
     0% { background-position: 0% 50%; }
@@ -75,49 +76,47 @@ h1 {
     font-size: 16px;
     color: #ffd966;
     font-weight: bold;
-    display: none;
 }
 #countdown span { color: #00ffcc; font-size: 18px; }
 
-.withdraw-section {
-    margin-top: 20px;
-    display: none;
-    background: rgba(30,30,30,0.9);
-    padding: 20px;
-    border-radius: 15px;
-}
-.withdraw-section input, .withdraw-section select {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: none;
+/* Reklam Konteyneri - Sağ Üst */
+.ad-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 320px;
+    max-width: 90vw;
     background: #111;
-    color: #fff;
-}
-.withdraw-section button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
+    border: 2px solid #00ffcc;
     border-radius: 12px;
-    background: linear-gradient(45deg,#1FA2FF,#12D8FA,#A6FFCB);
-    color: #111;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    z-index: 9999;
+    overflow: hidden;
+    display: none;
+}
+.ad-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
     cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.withdraw-section button:hover {
-    background: linear-gradient(45deg,#A6FFCB,#12D8FA,#1FA2FF);
-}
-#withdraw-status {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #ff4d4d;
-}
+.ad-close:hover { background: #ff0000; }
 </style>
 </head>
 <body>
+
 <div class="container">
     <h1>Earn Master</h1>
     <div class="stats">
@@ -132,26 +131,20 @@ h1 {
     <div class="buttons">
         <button id="auto-ad-btn">Auto Ads Başlat</button>
         <button id="stop-auto-btn" disabled>Auto Ads Durdur</button>
-        <button onclick="toggleWithdraw()">Para Çek</button>
     </div>
+</div>
 
-    <div class="withdraw-section" id="withdraw-section">
-        <input type="number" id="withdraw-amount" placeholder="Çekilecek Puan (min 5)">
-        <select id="payment-method">
-            <option value="bkash">Bkash</option>
-            <option value="nagad">Nagad</option>
-            <option value="manual">Manuel</option>
-        </select>
-        <input type="text" id="withdraw-phone" placeholder="Telefon Numarası">
-        <button onclick="withdrawPoints()">Çekim Gönder</button>
-        <p id="withdraw-status"></p>
-    </div>
+<!-- Reklam Penceresi (Sağ Üst) -->
+<div id="ad-container" class="ad-container">
+    <button id="ad-close" class="ad-close">X</button>
+    <div id="ad-content"></div>
 </div>
 
 <!-- Monetag SDK -->
 <script src="https://libtl.com/sdk.js" data-zone="10175246" data-sdk="show_10175246"></script>
 
 <script>
+// --- Veri ve UI ---
 let watchedAdsCount = parseInt(localStorage.getItem('watchedAdsCount')) || 0;
 let earnedPoints = parseFloat(localStorage.getItem('earnedPoints')) || 0;
 let autoRunning = false;
@@ -174,7 +167,7 @@ updateUI();
 function checkSDK() {
     if (typeof window.show_10175246 === 'function') {
         sdkReady = true;
-        console.log('Monetag SDK Yüklendi');
+        console.log('Monetag SDK yüklendi');
     } else {
         setTimeout(checkSDK, 500);
     }
@@ -184,42 +177,63 @@ checkSDK();
 // Geri Sayım
 function startCountdown(seconds, callback) {
     const timerEl = document.getElementById('timer');
-    const countdownEl = document.getElementById('countdown');
-    countdownEl.style.display = 'block';
-    let timeLeft = seconds;
-    timerEl.textContent = timeLeft;
+    let left = seconds;
+    timerEl.textContent = left;
 
     clearInterval(countdownInterval);
     countdownInterval = setInterval(() => {
-        timeLeft--;
-        timerEl.textContent = timeLeft;
-        if (timeLeft <= 0) {
+        left--;
+        timerEl.textContent = left;
+        if (left <= 0) {
             clearInterval(countdownInterval);
-            countdownEl.style.display = 'none';
             if (callback) callback();
         }
     }, 1000);
 }
 
-// Otomatik Reklam Döngüsü
-async function runAdCycle() {
-    if (!autoRunning || !sdkReady) return;
+// Reklamı Aç + 15s sonra X'e otomatik tıkla
+async function showAdAndAutoClose() {
+    if (!sdkReady || !autoRunning) return;
+
+    const container = document.getElementById('ad-container');
+    const content = document.getElementById('ad-content');
+    const closeBtn = document.getElementById('ad-close');
+
+    // Temizle
+    content.innerHTML = '';
+    container.style.display = 'block';
 
     try {
-        await show_10175246(); // Reklam göster
-        watchedAdsCount++;
-        earnedPoints += 0.5;
-        localStorage.setItem('watchedAdsCount', watchedAdsCount);
-        localStorage.setItem('earnedPoints', earnedPoints.toFixed(2));
-        updateUI();
-    } catch (err) {
-        console.error('Reklam hatası:', err);
-    }
+        await show_10175246({ target: content });
 
-    if (autoRunning) {
-        startCountdown(15, runAdCycle); // 15 saniye sonra yeni reklam
+        // 15 SANİYE SONRA X BUTONUNA OTOMATİK TIKLAMA
+        adTimeout = setTimeout(() => {
+            closeBtn.click(); // OTOMATİK TIKLAMA
+        }, 15000);
+
+    } catch (e) {
+        console.error('Reklam hatası:', e);
+        setTimeout(() => closeBtn.click(), 2000);
     }
 }
+
+// X'e tıklanınca (manuel veya otomatik)
+document.getElementById('ad-close').onclick = () => {
+    clearTimeout(adTimeout);
+    document.getElementById('ad-container').style.display = 'none';
+
+    // Puan ver
+    watchedAdsCount++;
+    earnedPoints += 0.5;
+    localStorage.setItem('watchedAdsCount', watchedAdsCount);
+    localStorage.setItem('earnedPoints', earnedPoints.toFixed(2));
+    updateUI();
+
+    // Yeni döngü
+    if (autoRunning) {
+        startCountdown(15, showAdAndAutoClose);
+    }
+};
 
 // Auto Ads Başlat
 document.getElementById('auto-ad-btn').onclick = () => {
@@ -232,7 +246,8 @@ document.getElementById('auto-ad-btn').onclick = () => {
     autoRunning = true;
     document.getElementById('auto-ad-btn').disabled = true;
     document.getElementById('stop-auto-btn').disabled = false;
-    runAdCycle();
+
+    showAdAndAutoClose();
 };
 
 // Auto Ads Durdur
@@ -240,48 +255,16 @@ document.getElementById('stop-auto-btn').onclick = () => {
     autoRunning = false;
     clearInterval(countdownInterval);
     clearTimeout(adTimeout);
-    document.getElementById('countdown').style.display = 'none';
+    document.getElementById('ad-container').style.display = 'none';
     document.getElementById('auto-ad-btn').disabled = false;
     document.getElementById('stop-auto-btn').disabled = true;
 };
 
-// Para Çek
-function toggleWithdraw() {
-    const el = document.getElementById('withdraw-section');
-    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-}
-
-function withdrawPoints() {
-    const amount = parseFloat(document.getElementById('withdraw-amount').value);
-    const phone = document.getElementById('withdraw-phone').value.trim();
-    const statusEl = document.getElementById('withdraw-status');
-
-    if (isNaN(amount) || amount < 5) {
-        statusEl.textContent = "Minimum 5 puan gereklidir.";
-        return;
-    }
-    if (amount > earnedPoints) {
-        statusEl.textContent = "Yetersiz bakiye!";
-        return;
-    }
-    if (!phone.match(/^[\d\s\+-]+$/)) {
-        statusEl.textContent = "Geçerli telefon numarası girin.";
-        return;
-    }
-
-    earnedPoints -= amount;
-    localStorage.setItem('earnedPoints', earnedPoints.toFixed(2));
-    updateUI();
-    statusEl.style.color = "#00ffcc";
-    statusEl.textContent = "Çekim talebi gönderildi! (Simülasyon)";
-    setTimeout(() => { statusEl.textContent = ''; }, 3000);
-    document.getElementById('withdraw-amount').value = '';
-    document.getElementById('withdraw-phone').value = '';
-}
-
 // Sayfa kapanırken temizle
 window.addEventListener('beforeunload', () => {
-    if (autoRunning) stopAutoAds();
+    if (autoRunning) {
+        document.getElementById('stop-auto-btn').click();
+    }
 });
 </script>
 </body>
